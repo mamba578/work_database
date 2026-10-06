@@ -1,0 +1,5 @@
+**/mysql_data/
+**/bin/
+**/obj/
+**/.vs/
+*.user
