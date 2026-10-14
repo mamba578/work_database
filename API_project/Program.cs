@@ -1,23 +1,24 @@
-using API_project.Models; // Укажите ваше пространство имен для AppDbContext
+using API_project.Models; // пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ пїЅпїЅпїЅ AppDbContext
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.FileProviders;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// 1. Добавление контроллеров
+// 1. пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
 builder.Services.AddControllers()
     .AddJsonOptions(options =>
     {
-        // Игнорируем циклы при сериализации в JSON
+        // пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅ JSON
         options.JsonSerializerOptions.ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.IgnoreCycles;
     });
 
-// 2. РЕГИСТРАЦИЯ DbContext (Именно этой строки сейчас не хватает)
+// 2. пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ DbContext (пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ)
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseMySql(
         connectionString,
-        new MySqlServerVersion(new Version(8, 0, 36)) // Указываем фиксированную версию MySQL
+        new MySqlServerVersion(new Version(8, 0, 36)) // пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ MySQL
     ));
 
 builder.Services.AddEndpointsApiExplorer();
@@ -25,13 +26,25 @@ builder.Services.AddSwaggerGen();
 
 var app = builder.Build();
 
-// Настройка HTTP pipeline
+// пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ HTTP pipeline
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI();
 }
 
+// Р’РєР»СЋС‡Р°РµРј РѕС‚РґР°С‡Сѓ РєР°СЂС‚РёРЅРѕРє Рё СЃС‚Р°С‚РёС‡РµСЃРєРёС… С„Р°Р№Р»РѕРІ РёР· wwwroot
+var imagesPath = Path.Combine(builder.Environment.ContentRootPath, "Images");
+if (!Directory.Exists(imagesPath))
+{
+    Directory.CreateDirectory(imagesPath);
+}
+
+app.UseStaticFiles(new StaticFileOptions
+{
+    FileProvider = new PhysicalFileProvider(imagesPath),
+    RequestPath = "/Images"
+});
 app.UseHttpsRedirection();
 app.UseAuthorization();
 app.MapControllers();
