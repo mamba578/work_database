@@ -11,16 +11,26 @@ namespace API_project.Controlles
     public class TovarController : ControllerBase
     {
         private readonly AppDbContext _context;
-
-        public TovarController(AppDbContext context)
+        private readonly IWebHostEnvironment _environment;
+        public TovarController(AppDbContext context, IWebHostEnvironment environment)
         {
             _context = context;
+            _environment = environment;
+        }
+
+        // Вспомогательный метод для формирования полного URL к фото
+        private string? GetPhotoUrl(string? photoFileName)
+        {
+            if (string.IsNullOrWhiteSpace(photoFileName))
+                return null;
+
+            return $"{Request.Scheme}://{Request.Host}/Images/{photoFileName}";
         }
 
         [HttpGet("AllProducts")]
         public async Task<IActionResult> AllProducts()
         {
-            var products = await _context.Tovars
+            var rawProducts = await _context.Tovars
                 .Include(t => t.IdBrandNavigation)
                 .Include(t => t.IdCategoryNavigation)
                 .Where(t => t.Status == "Активен")
@@ -41,40 +51,74 @@ namespace API_project.Controlles
                 })
                 .ToListAsync();
 
+            var products = rawProducts.Select(t => new
+            {
+                t.Id,
+                t.Article,
+                t.Title,
+                t.Price,
+                t.Quantity,
+                t.Description,
+                Photo = GetPhotoUrl(t.Photo),
+                t.Status,
+                t.IdBrand,
+                t.Brand,
+                t.IdCategory,
+                t.Category
+            });
+
             return Ok(products);
         }
 
         [HttpGet("GetProduct/{id}")]
         public async Task<IActionResult> GetProduct(int id)
         {
-            var product = await _context.Tovars
-                .Include(t => t.IdBrandNavigation)
-                .Include(t => t.IdCategoryNavigation)
-                .Where(t => t.Id == id)
-                .Select(t => new
+            var t = await _context.Tovars
+                .Include(p => p.IdBrandNavigation)
+                .Include(p => p.IdCategoryNavigation)
+                .Where(p => p.Id == id)
+                .Select(p => new
                 {
-                    t.Id,
-                    t.Article,
-                    t.Title,
-                    t.Price,
-                    t.Quantity,
-                    t.Description,
-                    t.Photo,
-                    t.Status,
-                    t.IdBrand,
-                    Brand = t.IdBrandNavigation != null ? t.IdBrandNavigation.Title : null,
-                    t.IdCategory,
-                    Category = t.IdCategoryNavigation != null ? t.IdCategoryNavigation.Title : null
+                    p.Id,
+                    p.Article,
+                    p.Title,
+                    p.Price,
+                    p.Quantity,
+                    p.Description,
+                    p.Photo,
+                    p.Status,
+                    p.IdBrand,
+                    Brand = p.IdBrandNavigation != null ? p.IdBrandNavigation.Title : null,
+                    p.IdCategory,
+                    Category = p.IdCategoryNavigation != null ? p.IdCategoryNavigation.Title : null
                 })
                 .FirstOrDefaultAsync();
 
-            return product == null ? NotFound("Товар не найден.") : Ok(product);
+            if (t == null) return NotFound("Товар не найден.");
+
+            var product = new
+            {
+                t.Id,
+                t.Article,
+                t.Title,
+                t.Price,
+                t.Quantity,
+                t.Description,
+                Photo = GetPhotoUrl(t.Photo),
+                t.Status,
+                t.IdBrand,
+                t.Brand,
+                t.IdCategory,
+                t.Category
+            };
+
+            return Ok(product);
         }
 
         [HttpGet("Search")]
         public async Task<IActionResult> Search(string name)
         {
-            var products = await _context.Tovars
+            var rawProducts = await _context.Tovars
                 .Include(t => t.IdBrandNavigation)
                 .Include(t => t.IdCategoryNavigation)
                 .Where(t => (t.Title.Contains(name) || t.Article.Contains(name)) && t.Status == "Активен")
@@ -92,13 +136,26 @@ namespace API_project.Controlles
                 })
                 .ToListAsync();
 
+            var products = rawProducts.Select(t => new
+            {
+                t.Id,
+                t.Article,
+                t.Title,
+                t.Price,
+                t.Quantity,
+                t.Description,
+                Photo = GetPhotoUrl(t.Photo),
+                t.Brand,
+                t.Category
+            });
+
             return Ok(products);
         }
 
         [HttpGet("GetByCategory/{categoryId}")]
         public async Task<IActionResult> GetByCategory(int categoryId)
         {
-            var products = await _context.Tovars
+            var rawProducts = await _context.Tovars
                 .Include(t => t.IdBrandNavigation)
                 .Include(t => t.IdCategoryNavigation)
                 .Where(t => t.IdCategory == categoryId && t.Status == "Активен")
@@ -119,13 +176,29 @@ namespace API_project.Controlles
                 })
                 .ToListAsync();
 
+            var products = rawProducts.Select(t => new
+            {
+                t.Id,
+                t.Article,
+                t.Title,
+                t.Price,
+                t.Quantity,
+                t.Description,
+                Photo = GetPhotoUrl(t.Photo),
+                t.Status,
+                t.IdBrand,
+                t.Brand,
+                t.IdCategory,
+                t.Category
+            });
+
             return Ok(products);
         }
 
         [HttpGet("GetByBrand/{brandId}")]
         public async Task<IActionResult> GetByBrand(int brandId)
         {
-            var products = await _context.Tovars
+            var rawProducts = await _context.Tovars
                 .Include(t => t.IdBrandNavigation)
                 .Include(t => t.IdCategoryNavigation)
                 .Where(t => t.IdBrand == brandId && t.Status == "Активен")
@@ -145,6 +218,22 @@ namespace API_project.Controlles
                     Category = t.IdCategoryNavigation != null ? t.IdCategoryNavigation.Title : null
                 })
                 .ToListAsync();
+
+            var products = rawProducts.Select(t => new
+            {
+                t.Id,
+                t.Article,
+                t.Title,
+                t.Price,
+                t.Quantity,
+                t.Description,
+                Photo = GetPhotoUrl(t.Photo),
+                t.Status,
+                t.IdBrand,
+                t.Brand,
+                t.IdCategory,
+                t.Category
+            });
 
             return Ok(products);
         }
@@ -172,7 +261,7 @@ namespace API_project.Controlles
                 query = query.Where(t => t.Title.Contains(search) || t.Article.Contains(search));
             }
 
-            var products = await query.Select(t => new
+            var rawProducts = await query.Select(t => new
             {
                 t.Id,
                 t.Article,
@@ -188,9 +277,24 @@ namespace API_project.Controlles
                 Category = t.IdCategoryNavigation != null ? t.IdCategoryNavigation.Title : null
             }).ToListAsync();
 
+            var products = rawProducts.Select(t => new
+            {
+                t.Id,
+                t.Article,
+                t.Title,
+                t.Price,
+                t.Quantity,
+                t.Description,
+                Photo = GetPhotoUrl(t.Photo),
+                t.Status,
+                t.IdBrand,
+                t.Brand,
+                t.IdCategory,
+                t.Category
+            });
+
             return Ok(products);
         }
-
         [HttpPost("AddProduct")]
         public async Task<IActionResult> AddProduct([FromBody] Tovar newProduct)
         {
@@ -215,6 +319,30 @@ namespace API_project.Controlles
                 var inner = ex.InnerException != null ? ex.InnerException.Message : ex.Message;
                 return StatusCode(500, $"Ошибка при добавлении в БД: {inner}");
             }
+        }
+
+        [HttpPost("UploadPhoto")]
+        public async Task<IActionResult> UploadPhoto(IFormFile file)
+        {
+            if (file == null || file.Length == 0)
+                return BadRequest("Файл не выбран");
+
+            var uploadsFolder = Path.Combine(Directory.GetCurrentDirectory(), "Images");
+            if (!Directory.Exists(uploadsFolder))
+                Directory.CreateDirectory(uploadsFolder);
+
+            // Сохраняем с уникальным именем, чтобы имена не конфликтовали
+            var extension = Path.GetExtension(file.FileName);
+            var uniqueFileName = $"{Guid.NewGuid()}{extension}";
+            var filePath = Path.Combine(uploadsFolder, uniqueFileName);
+
+            using (var stream = new FileStream(filePath, FileMode.Create))
+            {
+                await file.CopyToAsync(stream);
+            }
+
+            var fileUrl = $"{Request.Scheme}://{Request.Host}/Images/{uniqueFileName}";
+            return Ok(new { fileName = uniqueFileName, url = fileUrl });
         }
 
         [HttpPut("UpdateProduct/{id}")]
