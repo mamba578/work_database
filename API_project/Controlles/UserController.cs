@@ -59,15 +59,10 @@ namespace API_project.Controlles
         }
 
         [HttpPost("Authorization")]
-
-        public ActionResult Authorization(string login, string password)
-
+        public ActionResult Authorization([FromQuery] string login, [FromQuery] string password)
         {
-
             var currentUser = _context.Users.FirstOrDefault(u => u.Login == login && u.Password == password);
-
             return currentUser == null ? NotFound("Неверный логин или пароль.") : Ok(currentUser);
-
         }
 
         [HttpPost("Registration")]
