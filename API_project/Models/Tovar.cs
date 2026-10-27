@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using Microsoft.AspNetCore.Mvc.ModelBinding.Validation;
 
 namespace API_project.Models;
 
@@ -25,9 +26,12 @@ public partial class Tovar
 
     public string Photo { get; set; } = null!;
 
+    [ValidateNever]
     public virtual Brand IdBrandNavigation { get; set; } = null!;
 
+    [ValidateNever]
     public virtual Category IdCategoryNavigation { get; set; } = null!;
 
+    [ValidateNever]
     public virtual ICollection<OrderItem> OrderItems { get; set; } = new List<OrderItem>();
 }
