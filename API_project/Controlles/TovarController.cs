@@ -70,6 +70,48 @@ namespace API_project.Controlles
             return Ok(products);
         }
 
+        [HttpGet("AllProductsAdmin")]
+        public async Task<IActionResult> AllProductsAdmin()
+        {
+            var rawProducts = await _context.Tovars
+                .Include(t => t.IdBrandNavigation)
+                .Include(t => t.IdCategoryNavigation)
+                .Select(t => new
+                {
+                    t.Id,
+                    t.Article,
+                    t.Title,
+                    t.Price,
+                    t.Quantity,
+                    t.Description,
+                    t.Photo,
+                    t.Status,
+                    t.IdBrand,
+                    Brand = t.IdBrandNavigation != null ? t.IdBrandNavigation.Title : null,
+                    t.IdCategory,
+                    Category = t.IdCategoryNavigation != null ? t.IdCategoryNavigation.Title : null
+                })
+                .ToListAsync();
+
+            var products = rawProducts.Select(t => new
+            {
+                t.Id,
+                t.Article,
+                t.Title,
+                t.Price,
+                t.Quantity,
+                t.Description,
+                Photo = GetPhotoUrl(t.Photo),
+                t.Status,
+                t.IdBrand,
+                t.Brand,
+                t.IdCategory,
+                t.Category
+            });
+
+            return Ok(products);
+        }
+
         [HttpGet("GetProduct/{id}")]
         public async Task<IActionResult> GetProduct(int id)
         {
