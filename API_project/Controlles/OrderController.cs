@@ -29,6 +29,7 @@ namespace API_project.Controlles
                 {
                     o.Id,
                     o.OrderDate,
+                    o.DeliveryDate,
                     o.TotalPrice,
                     o.PaymentType,
                     o.IdStatus,
