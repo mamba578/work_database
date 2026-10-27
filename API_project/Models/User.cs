@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using Microsoft.AspNetCore.Mvc.ModelBinding.Validation;
 
 namespace API_project.Models;
 
@@ -23,5 +24,6 @@ public partial class User
 
     public string Role { get; set; }
 
+    [ValidateNever]
     public virtual ICollection<Order> Orders { get; set; } = new List<Order>();
 }
