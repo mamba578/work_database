@@ -1,4 +1,7 @@
-﻿using API_project.Models;
+﻿using System.Net;
+using System.Net.Mail;
+using System.Text;
+using API_project.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -134,12 +137,13 @@ namespace API_project.Controlles
             }
         }
 
-        [HttpPut("UpdateStatus/{idOrder}")]
+       [HttpPut("UpdateStatus/{idOrder}")]
         public async Task<IActionResult> UpdateStatus(
             int idOrder,
             [FromQuery] int newStatusId,
             [FromQuery] int idPoint = 0,
-            [FromQuery] string? paymentType = null)
+            [FromQuery] string? paymentType = null,
+            [FromQuery] string? email = null)
         {
             try
             {
@@ -151,12 +155,13 @@ namespace API_project.Controlles
                 const int draftStatusId = 1;
                 const int paidStatusId = 2;
 
+                var itemsInCart = await _context.OrderItems
+                    .Include(oi => oi.IdTovarNavigation)
+                    .Where(oi => oi.IdOrder == oldOrder.Id)
+                    .ToListAsync();
+
                 if (newStatusId == paidStatusId && oldOrder.IdStatus == draftStatusId)
                 {
-                    var itemsInCart = await _context.OrderItems
-                        .Where(oi => oi.IdOrder == oldOrder.Id)
-                        .ToListAsync();
-
                     if (!itemsInCart.Any())
                     {
                         return BadRequest("Невозможно оформить пустой заказ (нет товаров в корзине)");
@@ -184,7 +189,63 @@ namespace API_project.Controlles
 
                 await _context.SaveChangesAsync();
 
-                return Ok("Заказ успешно обновлен.");
+                // РЕАЛЬНАЯ ОТПРАВКА ЧЕКА СТРОГО НА ПОЧТУ КЛИЕНТА
+                string? targetEmail = email;
+                if (string.IsNullOrEmpty(targetEmail))
+                {
+                    var user = await _context.Users.FirstOrDefaultAsync(u => u.Id == oldOrder.IdUser);
+                    targetEmail = user?.Email;
+                }
+
+                if (!string.IsNullOrEmpty(targetEmail))
+                {
+                    try
+                    {
+                        // Настройки SMTP-сервера почты отправителя (магазина)
+                        var smtpClient = new SmtpClient("smtp.yandex.ru")
+                        {
+                            Port = 587,
+                            Credentials = new NetworkCredential("admin@artstore.ru", "пароль_приложения_почты_магазина"),
+                            EnableSsl = true,
+                        };
+
+                        var mailMessage = new MailMessage
+                        {
+                            From = new MailAddress("admin@artstore.ru", "Интернет-магазин Azure"),
+                            Subject = $"Электронный чек к заказу #{oldOrder.Id}",
+                            IsBodyHtml = true,
+                        };
+                        
+                        // Письмо уходит строго на личную почту клиента
+                        mailMessage.To.Add(targetEmail);
+
+                        // Формирование HTML-чека
+                        var sb = new StringBuilder();
+                        sb.Append($"<h2>Спасибо за покупку в интернет-магазине «Azure»!</h2>");
+                        sb.Append($"<p>Ваш заказ <b>#{oldOrder.Id}</b> успешно оформлен и оплачен.</p>");
+                        sb.Append($"<p><b>Способ оплаты:</b> {oldOrder.PaymentType}</p>");
+                        sb.Append($"<h3>Состав заказа:</h3><ul>");
+                        
+                        foreach (var i in itemsInCart)
+                        {
+                            var title = i.IdTovarNavigation?.Title ?? $"Товар #{i.IdTovar}";
+                            sb.Append($"<li>{title} — {i.Quantity} шт. по {i.Price} ₽</li>");
+                        }
+                        
+                        sb.Append($"</ul>");
+                        sb.Append($"<h3>Итого к оплате: {oldOrder.TotalPrice} ₽</h3>");
+
+                        mailMessage.Body = sb.ToString();
+
+                        await smtpClient.SendMailAsync(mailMessage);
+                    }
+                    catch (Exception mailEx)
+                    {
+                        Console.WriteLine($"Ошибка отправки почты клиенту: {mailEx.Message}");
+                    }
+                }
+
+                return Ok("Заказ успешно обновлен и чек отправлен.");
             }
             catch (Exception ex)
             {
@@ -192,5 +253,6 @@ namespace API_project.Controlles
                 return StatusCode(500, $"Ошибка сервера: {inner}");
             }
         }
-    }
+
+    } 
 }

@@ -16,4 +16,6 @@ public partial class Point
 
     [ValidateNever]
     public virtual ICollection<Order> Orders { get; set; } = new List<Order>();
+
+    public string Address => $"г. {City}, ул. {Street}, дом {HomeNumber}";
 }
