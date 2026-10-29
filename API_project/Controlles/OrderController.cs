@@ -138,121 +138,153 @@ namespace API_project.Controlles
         }
 
        [HttpPut("UpdateStatus/{idOrder}")]
-        public async Task<IActionResult> UpdateStatus(
-            int idOrder,
-            [FromQuery] int newStatusId,
-            [FromQuery] int idPoint = 0,
-            [FromQuery] string? paymentType = null,
-            [FromQuery] string? email = null)
+public async Task<IActionResult> UpdateStatus(
+    int idOrder,
+    [FromQuery] int newStatusId,
+    [FromQuery] int idPoint = 0,
+    [FromQuery] string? paymentType = null,
+    [FromQuery] string? email = null)
+{
+    try
+    {
+        var oldOrder = await _context.Orders
+            .Include(o => o.IdUserNavigation)
+            .Include(o => o.IdPointNavigation)
+            .FirstOrDefaultAsync(x => x.Id == idOrder);
+
+        if (oldOrder == null)
+            return NotFound("Заказ не найден в базе данных");
+
+        const int draftStatusId = 1;
+        const int paidStatusId = 2;
+
+        var itemsInCart = await _context.OrderItems
+            .Include(oi => oi.IdTovarNavigation)
+            .Where(oi => oi.IdOrder == oldOrder.Id)
+            .ToListAsync();
+
+        if (newStatusId == paidStatusId && oldOrder.IdStatus == draftStatusId)
         {
-            try
+            if (!itemsInCart.Any())
             {
-                var oldOrder = await _context.Orders.FirstOrDefaultAsync(x => x.Id == idOrder);
-
-                if (oldOrder == null)
-                    return NotFound("Заказ не найден в базе данных");
-
-                const int draftStatusId = 1;
-                const int paidStatusId = 2;
-
-                var itemsInCart = await _context.OrderItems
-                    .Include(oi => oi.IdTovarNavigation)
-                    .Where(oi => oi.IdOrder == oldOrder.Id)
-                    .ToListAsync();
-
-                if (newStatusId == paidStatusId && oldOrder.IdStatus == draftStatusId)
-                {
-                    if (!itemsInCart.Any())
-                    {
-                        return BadRequest("Невозможно оформить пустой заказ (нет товаров в корзине)");
-                    }
-
-                    foreach (var item in itemsInCart)
-                    {
-                        var product = await _context.Tovars.FirstOrDefaultAsync(p => p.Id == item.IdTovar);
-
-                        if (product != null)
-                        {
-                            if (product.Quantity < item.Quantity)
-                            {
-                                return BadRequest($"Недостаточно товара '{product.Title}' на складе. Доступно: {product.Quantity}, требуется: {item.Quantity}");
-                            }
-
-                            product.Quantity -= item.Quantity;
-                        }
-                    }
-                }
-
-                oldOrder.IdStatus = newStatusId;
-                if (idPoint > 0) oldOrder.IdPoint = idPoint;
-                if (!string.IsNullOrEmpty(paymentType)) oldOrder.PaymentType = paymentType;
-
-                await _context.SaveChangesAsync();
-
-                // РЕАЛЬНАЯ ОТПРАВКА ЧЕКА СТРОГО НА ПОЧТУ КЛИЕНТА
-                string? targetEmail = email;
-                if (string.IsNullOrEmpty(targetEmail))
-                {
-                    var user = await _context.Users.FirstOrDefaultAsync(u => u.Id == oldOrder.IdUser);
-                    targetEmail = user?.Email;
-                }
-
-                if (!string.IsNullOrEmpty(targetEmail))
-                {
-                    try
-                    {
-                        // Настройки SMTP-сервера почты отправителя (магазина)
-                        var smtpClient = new SmtpClient("smtp.yandex.ru")
-                        {
-                            Port = 587,
-                            Credentials = new NetworkCredential("admin@artstore.ru", "пароль_приложения_почты_магазина"),
-                            EnableSsl = true,
-                        };
-
-                        var mailMessage = new MailMessage
-                        {
-                            From = new MailAddress("admin@artstore.ru", "Интернет-магазин Azure"),
-                            Subject = $"Электронный чек к заказу #{oldOrder.Id}",
-                            IsBodyHtml = true,
-                        };
-                        
-                        // Письмо уходит строго на личную почту клиента
-                        mailMessage.To.Add(targetEmail);
-
-                        // Формирование HTML-чека
-                        var sb = new StringBuilder();
-                        sb.Append($"<h2>Спасибо за покупку в интернет-магазине «Azure»!</h2>");
-                        sb.Append($"<p>Ваш заказ <b>#{oldOrder.Id}</b> успешно оформлен и оплачен.</p>");
-                        sb.Append($"<p><b>Способ оплаты:</b> {oldOrder.PaymentType}</p>");
-                        sb.Append($"<h3>Состав заказа:</h3><ul>");
-                        
-                        foreach (var i in itemsInCart)
-                        {
-                            var title = i.IdTovarNavigation?.Title ?? $"Товар #{i.IdTovar}";
-                            sb.Append($"<li>{title} — {i.Quantity} шт. по {i.Price} ₽</li>");
-                        }
-                        
-                        sb.Append($"</ul>");
-                        sb.Append($"<h3>Итого к оплате: {oldOrder.TotalPrice} ₽</h3>");
-
-                        mailMessage.Body = sb.ToString();
-
-                        await smtpClient.SendMailAsync(mailMessage);
-                    }
-                    catch (Exception mailEx)
-                    {
-                        Console.WriteLine($"Ошибка отправки почты клиенту: {mailEx.Message}");
-                    }
-                }
-
-                return Ok("Заказ успешно обновлен и чек отправлен.");
+                return BadRequest("Невозможно оформить пустой заказ (нет товаров в корзине)");
             }
-            catch (Exception ex)
+
+            foreach (var item in itemsInCart)
             {
-                var inner = ex.InnerException != null ? ex.InnerException.Message : ex.Message;
-                return StatusCode(500, $"Ошибка сервера: {inner}");
+                var product = await _context.Tovars.FirstOrDefaultAsync(p => p.Id == item.IdTovar);
+
+                if (product != null)
+                {
+                    if (product.Quantity < item.Quantity)
+                    {
+                        return BadRequest($"Недостаточно товара '{product.Title}' на складе. Доступно: {product.Quantity}, требуется: {item.Quantity}");
+                    }
+
+                    product.Quantity -= item.Quantity;
+                }
             }
         }
 
+        oldOrder.IdStatus = newStatusId;
+        if (idPoint > 0) oldOrder.IdPoint = idPoint;
+        if (!string.IsNullOrEmpty(paymentType)) oldOrder.PaymentType = paymentType;
+
+        await _context.SaveChangesAsync();
+
+        // 1. Получаем почту клиента
+        string? targetEmail = email;
+        if (string.IsNullOrEmpty(targetEmail))
+        {
+            targetEmail = oldOrder.IdUserNavigation?.Email;
+        }
+
+        // Данные для красивого чека
+        var customerName = oldOrder.IdUserNavigation != null 
+            ? $"{oldOrder.IdUserNavigation.Name}" 
+            : "Покупатель";
+
+        var pointAddress = oldOrder.IdPointNavigation != null 
+            ? $"{oldOrder.IdPointNavigation.City}, ул. {oldOrder.IdPointNavigation.Street}, д.{oldOrder.IdPointNavigation.HomeNumber}" 
+            : "Пункт выдачи";
+
+        // 2. Формируем текст чека в точном соответствии с вашим макетом
+        var receiptBuilder = new StringBuilder();
+        receiptBuilder.AppendLine("==================================================");
+        receiptBuilder.AppendLine("           Творческий магазин «Azure»             ");
+        receiptBuilder.AppendLine("            Кассовый чек / Товарный отчет         ");
+        receiptBuilder.AppendLine("==================================================");
+        receiptBuilder.AppendLine();
+        receiptBuilder.AppendLine($"Номер заказа: №{oldOrder.Id}");
+        receiptBuilder.AppendLine($"Дата и время: {DateTime.Now:dd.MM.yyyy HH:mm}");
+        receiptBuilder.AppendLine($"Покупатель: {customerName}");
+        receiptBuilder.AppendLine($"Место доставки: {pointAddress}");
+        receiptBuilder.AppendLine($"Способ оплаты: {oldOrder.PaymentType ?? "Не указан"}");
+        receiptBuilder.AppendLine();
+        receiptBuilder.AppendLine("--------------------------------------------------");
+        receiptBuilder.AppendLine("Приобретенные товары:");
+        receiptBuilder.AppendLine();
+
+        int index = 1;
+        foreach (var i in itemsInCart)
+        {
+            var title = i.IdTovarNavigation?.Title ?? $"Товар #{i.IdTovar}";
+            var sum = i.Quantity * i.Price;
+            receiptBuilder.AppendLine($"{index}. {title} — {i.Quantity} шт. = {sum:N2} ₽");
+            index++;
+        }
+
+        receiptBuilder.AppendLine();
+        receiptBuilder.AppendLine("--------------------------------------------------");
+        receiptBuilder.AppendLine($"ОБЩАЯ СУММА: {oldOrder.TotalPrice:N2} ₽");
+        receiptBuilder.AppendLine();
+        receiptBuilder.AppendLine("Спасибо за Ваш заказ в Azure! Творите с удовольствием!");
+        receiptBuilder.AppendLine("==================================================");
+
+        // 3. Сохранение чека в указанную папку на рабочем столе
+       // Правильное сохранение файла на диск в вашу папку
+        string folderPath = @"C:\Users\Huawei\OneDrive\Desktop\Магазин творчества\Чеки";
+        Directory.CreateDirectory(folderPath);
+
+        string filePath = Path.Combine(folderPath, $"Check_{oldOrder.Id}.txt");
+        await System.IO.File.WriteAllTextAsync(filePath, receiptBuilder.ToString(), Encoding.UTF8);
+
+        // 4. Отправка чека на почту клиенту (при необходимости)
+        if (!string.IsNullOrEmpty(targetEmail))
+        {
+            try
+            {
+                var smtpClient = new SmtpClient("smtp.yandex.ru")
+                {
+                    Port = 587,
+                    Credentials = new NetworkCredential("admin@artstore.ru", "пароль_приложения"),
+                    EnableSsl = true,
+                };
+
+                var mailMessage = new MailMessage
+                {
+                    From = new MailAddress("admin@artstore.ru", "Интернет-магазин Azure"),
+                    Subject = $"Электронный чек к заказу #{oldOrder.Id}",
+                    IsBodyHtml = false, // Отправляем чистым текстом по вашему шаблону чека
+                    Body = receiptBuilder.ToString()
+                };
+                
+                mailMessage.To.Add(targetEmail);
+                await smtpClient.SendMailAsync(mailMessage);
+            }
+            catch (Exception mailEx)
+            {
+                Console.WriteLine($"Ошибка отправки почты: {mailEx.Message}");
+            }
+        }
+
+        return Ok("Заказ успешно обновлен, чек сохранен на диск и отправлен!");
+    }
+    catch (Exception ex)
+    {
+        var inner = ex.InnerException != null ? ex.InnerException.Message : ex.Message;
+        return StatusCode(500, $"Ошибка сервера: {inner}");
+    }
+}
     } 
 }
