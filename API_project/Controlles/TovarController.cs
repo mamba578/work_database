@@ -163,7 +163,7 @@ namespace API_project.Controlles
             var rawProducts = await _context.Tovars
                 .Include(t => t.IdBrandNavigation)
                 .Include(t => t.IdCategoryNavigation)
-                .Where(t => (t.Title.Contains(name) || t.Article.Contains(name)) && t.Status == "Активен")
+                .Where(t => t.Title.Contains(name) || t.Article.Contains(name))
                 .Select(t => new
                 {
                     t.Id,
@@ -172,6 +172,7 @@ namespace API_project.Controlles
                     t.Price,
                     t.Quantity,
                     t.Description,
+                    t.Status,
                     t.Photo,
                     Brand = t.IdBrandNavigation != null ? t.IdBrandNavigation.Title : null,
                     Category = t.IdCategoryNavigation != null ? t.IdCategoryNavigation.Title : null
@@ -187,6 +188,7 @@ namespace API_project.Controlles
                 t.Quantity,
                 t.Description,
                 Photo = GetPhotoUrl(t.Photo),
+                t.Status,
                 t.Brand,
                 t.Category
             });

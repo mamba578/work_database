@@ -72,41 +72,42 @@ namespace API_project.Controlles
         }
 
         [HttpGet("GetActiveOrder/{userId}")]
-        public async Task<IActionResult> GetActiveOrder(int userId)
+public async Task<IActionResult> GetActiveOrder(int userId)
+{
+    const int cartStatusId = 1;
+
+    var order = await _context.Orders
+        .FirstOrDefaultAsync(o => o.IdUser == userId && o.IdStatus == cartStatusId);
+
+    if (order == null)
+    {
+        order = new Order
         {
-            const int cartStatusId = 1;
+            IdUser = userId,
+            OrderDate = DateTime.Now,
+            DeliveryDate = DateTime.Now.AddDays(7), // <--- ДОБАВЬТЕ ЭТУ СТРОКУ СЮДА
+            TotalPrice = 0,
+            IdStatus = cartStatusId,
+            IdPoint = 1,
+            PaymentType = "При получении"
+        };
 
-            var order = await _context.Orders
-                .FirstOrDefaultAsync(o => o.IdUser == userId && o.IdStatus == cartStatusId);
+        _context.Orders.Add(order);
+        await _context.SaveChangesAsync();
+    }
 
-            if (order == null)
-            {
-                order = new Order
-                {
-                    IdUser = userId,
-                    OrderDate = DateTime.Now,
-                    TotalPrice = 0,
-                    IdStatus = cartStatusId,
-                    IdPoint = 1,
-                    PaymentType = "При получении"
-                };
-
-                _context.Orders.Add(order);
-                await _context.SaveChangesAsync();
-            }
-
-            return Ok(new
-            {
-                order.Id,
-                order.IdUser,
-                order.OrderDate,
-                order.TotalPrice,
-                order.IdStatus,
-                order.IdPoint,
-                order.PaymentType
-            });
-        }
-
+    return Ok(new
+    {
+        order.Id,
+        order.IdUser,
+        order.OrderDate,
+        order.DeliveryDate,
+        order.TotalPrice,
+        order.IdStatus,
+        order.IdPoint,
+        order.PaymentType
+    });
+}
         [HttpPost("CreateOrder")]
         public async Task<IActionResult> CreateOrder([FromBody] Order newOrder)
         {
@@ -121,6 +122,8 @@ namespace API_project.Controlles
                 {
                     newOrder.OrderDate = DateTime.Now;
                 }
+
+                newOrder.DeliveryDate = newOrder.OrderDate.AddDays(7);
 
                 if (newOrder.IdStatus == 0) newOrder.IdStatus = 1;
                 if (newOrder.IdPoint == 0) newOrder.IdPoint = 1;
@@ -186,9 +189,18 @@ public async Task<IActionResult> UpdateStatus(
             }
         }
 
+       // Если заказ только что оформили (перешел из корзины в статус "Оплачен/В обработке")
+        if (newStatusId == paidStatusId && oldOrder.IdStatus == draftStatusId)
+        {
+            oldOrder.OrderDate = DateTime.Now;               // Фиксируем реальное время покупки
+            oldOrder.DeliveryDate = DateTime.Now.AddDays(7); // Доставка ровно через неделю
+        }
+
         oldOrder.IdStatus = newStatusId;
         if (idPoint > 0) oldOrder.IdPoint = idPoint;
         if (!string.IsNullOrEmpty(paymentType)) oldOrder.PaymentType = paymentType;
+
+        await _context.SaveChangesAsync();
 
         await _context.SaveChangesAsync();
 

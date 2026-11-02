@@ -1,0 +1,72 @@
+﻿<Window x:Class="AdminPanel_project.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:AdminPanel_project"
+        mc:Ignorable="d"
+        Icon="/Foto/Icon.ico"
+        Title="Azure"
+        Height="552"
+        Width="800"
+        WindowStartupLocation="CenterScreen"
+        ResizeMode="NoResize">
+
+    <Grid Background="#DCE3EA">
+        <Border Style="{StaticResource MainPanelBorderStyle}"
+                HorizontalAlignment="Center"
+                VerticalAlignment="Center">
+            <StackPanel>
+
+                <TextBlock Style="{StaticResource HeaderTextBlockStyle}"
+                           Text="Добро пожаловать!"
+                           Margin="0,0,0,25"/>
+
+                <!-- Ввод логина (убрали обертку Border) -->
+                <TextBox x:Name="LoginTb"
+                         Style="{StaticResource RoundedTextBoxStyle}"
+                         Margin="10"
+                         Foreground="LightGray"
+                         Text="Логин"
+                         MaxLength="20" LostKeyboardFocus="LoginTb_LostKeyboardFocus" GotKeyboardFocus="LoginTb_GotKeyboardFocus"/>
+
+                <!-- Скрытый пароль и видимый пароль (убрали обертку Border) -->
+                <!-- Скрытый пароль и видимый пароль -->
+                <Grid Margin="10">
+                    <PasswordBox x:Name="PasswordPb"
+                         Style="{StaticResource RoundedPasswordBoxStyle}"
+                         MaxLength="20"
+                         PasswordChanged="passwordPb_PasswordChanged"/>
+
+                    <TextBox x:Name="PasswordVisibleTb"
+                         Style="{StaticResource RoundedTextBoxStyle}"
+                         Visibility="Collapsed"
+                         MaxLength="30"
+                         TextChanged="passwordVisibleTb_TextChanged"/>
+
+                    <!-- Добавленный Placeholder. Расположен ниже в XAML, чтобы отрисовываться поверх полей -->
+                    <TextBlock x:Name="PasswordPlaceholder" 
+                               Text="Пароль" 
+                               Foreground="LightGray" 
+                               VerticalAlignment="Center" 
+                               Margin="15,0,0,0" 
+                               IsHitTestVisible="False"/>
+                </Grid>
+
+                <CheckBox x:Name="ShowPasswordCheckBox"
+                          Style="{StaticResource DefaultCheckBoxStyle}"
+                          Content="Показать пароль"
+                          Margin="5,10,0,0"
+                          Checked="ShowPasswordCheckBox_Checked"
+                          Unchecked="ShowPasswordCheckBox_Unchecked"/>
+
+                <Button x:Name="Autotb"
+                        Style="{StaticResource PrimaryButtonStyle}"
+                        Content="Войти"
+                        Margin="10,25"
+                        Click="Autotb_Click"/>
+
+            </StackPanel>
+        </Border>
+    </Grid>
+</Window>
