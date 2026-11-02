@@ -1,0 +1,59 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <UseWPF>true</UseWPF>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Remove="Foto\Icon.ico" />
+    <None Remove="Foto\Icona.ico" />
+    <None Remove="Foto\puding.ico" />
+    <None Remove="Foto\Акварель - копия.png" />
+    <None Remove="Foto\Бамбуковое кисти.png" />
+    <None Remove="Foto\Дерево - копия.png" />
+    <None Remove="Foto\Кисти на основе воды.png" />
+    <None Remove="Foto\Кисти.png" />
+    <None Remove="Foto\Ластик.png" />
+    <None Remove="Foto\Лист для карандаша.png" />
+    <None Remove="Foto\лупа.png" />
+    <None Remove="Foto\Ножик - копия.png" />
+    <None Remove="Foto\Ручки.png" />
+    <None Remove="Foto\Фон.png" />
+    <None Remove="Foto\Фон2.png" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="LiveChartsCore" Version="2.0.5" />
+    <PackageReference Include="LiveChartsCore.SkiaSharpView.WPF" Version="2.0.5" />
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.4" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Resource Include="Foto\Icon.ico" />
+    <Resource Include="Foto\Icona.ico" />
+    <Resource Include="Foto\puding.ico" />
+    <Resource Include="Foto\Акварель - копия.png" />
+    <Resource Include="Foto\Бамбуковое кисти.png" />
+    <Resource Include="Foto\Дерево - копия.png" />
+    <Resource Include="Foto\Кисти на основе воды.png" />
+    <Resource Include="Foto\Кисти.png" />
+    <Resource Include="Foto\Ластик.png" />
+    <Resource Include="Foto\Лист для карандаша.png" />
+    <Resource Include="Foto\лупа.png" />
+    <Resource Include="Foto\Ножик - копия.png" />
+    <Resource Include="Foto\Ручки.png" />
+    <Resource Include="Foto\Фон.png" />
+    <Resource Include="Foto\Фон2.png" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Update="AdminWindow.cs">
+      <Generator>MSBuild:Compile</Generator>
+    </Compile>
+  </ItemGroup>
+
+</Project>

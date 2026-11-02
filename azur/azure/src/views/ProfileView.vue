@@ -3,6 +3,7 @@ import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { api } from '@/api/axios'
+import { useCartStore } from '@/stores/cart'
 
 interface OrderItem {
   id: number
@@ -19,11 +20,13 @@ interface Order {
   paymentType: string
   idStatus: number
   idPoint: number
+  status?: string
   orderItems?: OrderItem[]
 }
 
 const router = useRouter()
 const auth = useAuthStore()
+const cartStore = useCartStore() // Инициализируем хранилище
 
 const user = ref(auth.user || JSON.parse(localStorage.getItem('user') || 'null'))
 const orders = ref<Order[]>([])
@@ -41,6 +44,18 @@ const form = ref({
   password: ''
 })
 
+// Функция для перевода ID статуса в текст
+function getStatusName(idStatus: number): string {
+  const statuses: Record<number, string> = {
+    1: 'Новый',
+    2: 'В обработке',
+    3: 'Передан в доставку',
+    4: 'Завершен',
+    5: 'Отменен'
+  }
+  return statuses[idStatus] || 'Неизвестен'
+}
+
 onMounted(async () => {
   if (!auth.isAuthenticated && !user.value) {
     router.push('/login')
@@ -54,8 +69,8 @@ onMounted(async () => {
     const userId = user.value?.id || user.value?.Id
     if (!userId) return
 
-  const res = await api.get(`/Order/UserOrders/${userId}`)
-  orders.value = res.data
+    const res = await api.get(`/Order/UserOrders/${userId}`)
+    orders.value = res.data
   } catch (e) {
     console.error('Ошибка при загрузке истории заказов:', e)
   } finally {
@@ -115,23 +130,13 @@ async function handleUpdate() {
 function logout() {
   auth.logout?.()
   localStorage.clear()
+  cartStore.clearCart() // <-- ДОБАВЛЕНО: Стираем данные корзины из памяти
   router.push('/login')
 }
 </script>
 
 <template>
   <div class="user-wrapper">
-    <header class="catalog-header">
-      <div class="header-top">
-        <h1 class="header-title">Личный кабинет «Azure»</h1>
-      </div>
-      <div class="header-nav">
-        <button class="nav-btn" @click="router.push('/catalog')">Главная</button>
-        <button class="nav-btn" @click="router.push('/cart')">Корзина</button>
-        <button class="nav-btn active">Личный кабинет</button>
-      </div>
-    </header>
-
     <main class="user-content">
       <div class="profile-grid">
         <!-- Левая колонка: Профиль с возможностью редактирования -->
@@ -210,7 +215,9 @@ function logout() {
             <div v-for="order in orders" :key="order.id" class="order-item">
               <div class="order-header">
                 <span class="order-id">Заказ №{{ order.id }}</span>
-                <span class="order-status">Статус ID: {{ order.idStatus }}</span>
+              <span class="order-status" :class="'status-' + order.idStatus">
+                {{ order.status || getStatusName(order.idStatus) }}
+              </span>   
               </div>
               <div class="order-details">
                 <span>Дата: {{ new Date(order.orderDate).toLocaleDateString('ru-RU') }}</span>
@@ -226,15 +233,11 @@ function logout() {
 
 <style scoped>
 .user-wrapper { min-height: 100vh; background-color: #DCE3EA; display: flex; flex-direction: column; }
-.catalog-header { background-color: #C8D3DF; padding: 16px 24px 12px 24px; border-bottom-left-radius: 20px; border-bottom-right-radius: 20px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05); display: flex; flex-direction: column; gap: 12px; }
-.header-top { display: flex; align-items: center; gap: 16px; }
-.header-title { font-size: 22px; color: #1a3a6b; margin: 0; }
-.header-nav { display: flex; justify-content: center; gap: 16px; }
-.nav-btn { padding: 8px 32px; border-radius: 18px; border: none; background-color: #6F8AA6; color: white; font-size: 15px; font-weight: 600; cursor: pointer; transition: all 0.2s; box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1); }
-.nav-btn:hover { background-color: #557290; transform: translateY(-1px); }
-.nav-btn.active { background-color: #4A6785; }
 .user-content { padding: 24px; flex: 1; max-width: 1000px; margin: 0 auto; width: 100%; }
-.profile-grid { display: grid; grid-template-columns: 320px 1fr; gap: 24px; }
+
+/* ДОБАВЛЕНО: align-items: flex-start не дает левой карточке тянуться за правой */
+.profile-grid { display: grid; grid-template-columns: 320px 1fr; gap: 24px; align-items: flex-start; }
+
 .profile-card, .orders-card { background: white; border-radius: 16px; padding: 24px; box-shadow: 0 8px 24px rgba(0, 0, 0, 0.05); display: flex; flex-direction: column; justify-content: space-between; }
 .avatar-container { display: flex; flex-direction: column; align-items: center; margin-bottom: 20px; }
 .avatar-placeholder { width: 80px; height: 80px; border-radius: 50%; background: #6F8AA6; color: white; font-size: 36px; font-weight: bold; display: flex; align-items: center; justify-content: center; margin-bottom: 12px; }
@@ -261,7 +264,20 @@ function logout() {
 .logout-btn:hover { background: #dc3545; color: white; }
 .orders-card h2 { margin-top: 0; color: #1a3a6b; font-size: 20px; margin-bottom: 16px; }
 .status-msg { color: #777; font-size: 15px; text-align: center; margin-top: 40px; }
-.orders-list { display: flex; flex-direction: column; gap: 12px; }
+
+/* ДОБАВЛЕНО: Скролл для истории заказов */
+.orders-list { 
+  display: flex; 
+  flex-direction: column; 
+  gap: 12px; 
+  max-height: 500px; /* Ограничиваем высоту */
+  overflow-y: auto;  /* Включаем прокрутку, если заказов много */
+  padding-right: 8px; /* Отступ, чтобы ползунок не прилипал к краям карточки */
+}
+/* Красивый скроллбар для списка заказов */
+.orders-list::-webkit-scrollbar { width: 6px; }
+.orders-list::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+
 .order-item { border: 1px solid #e0e6ed; border-radius: 10px; padding: 14px; background: #fdfdfd; display: flex; flex-direction: column; gap: 6px; }
 .order-header { display: flex; justify-content: space-between; font-weight: bold; }
 .order-id { color: #1a3a6b; }

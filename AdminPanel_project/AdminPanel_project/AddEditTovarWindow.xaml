@@ -1,0 +1,94 @@
+﻿<Window x:Class="AdminPanel_project.AddEditTovarWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:AdminPanel_project"
+        mc:Ignorable="d"
+        Icon="/Foto/Icon.ico"
+        Title="Azure"
+        Height="750"
+        Width="700"
+        WindowStartupLocation="CenterScreen"
+        ResizeMode="NoResize"
+        Background="#EEF2F5">
+
+    <Grid Margin="25">
+        <Border Style="{StaticResource FormContainerStyle}">
+            <ScrollViewer VerticalScrollBarVisibility="Auto">
+                <StackPanel>
+
+                    <!-- ЗАГОЛОВОК -->
+                    <TextBlock x:Name="TitleTb" Text="Добавление товара" Style="{StaticResource FormTitleStyle}"/>
+
+                    <!-- НАЗВАНИЕ -->
+                    <TextBlock Text="Название товара" Style="{StaticResource FormLabelStyle}" Margin="5,0,0,5"/>
+                    <TextBox x:Name="NameTb" Style="{StaticResource FormTextBoxStyle}" MaxLength="100"/>
+
+                    <!-- КАТЕГОРИЯ -->
+                    <TextBlock Text="Категория" Style="{StaticResource FormLabelStyle}"/>
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+
+                        <!-- Стандартный вид -->
+                        <ComboBox x:Name="CategoryCb" Grid.Column="0" Style="{StaticResource FormComboBoxStyle}"/>
+                        <Button x:Name="ShowAddCategoryBt" Grid.Column="1" Content="+" Width="35" Margin="5,0,0,0" Click="ShowAddCategoryBt_Click"/>
+
+                        <!-- Режим добавления (Скрыт по умолчанию) -->
+                        <TextBox x:Name="NewCategoryTb" Grid.Column="0" Visibility="Collapsed" Style="{StaticResource FormTextBoxStyle}"/>
+                        <Button x:Name="SaveCategoryBt" Grid.Column="1" Content="✓" Width="35" Margin="5,0,0,0" Visibility="Collapsed" Click="SaveCategoryBt_Click"/>
+                        <Button x:Name="CancelCategoryBt" Grid.Column="2" Content="X" Width="35" Margin="5,0,0,0" Visibility="Collapsed" Click="CancelCategoryBt_Click"/>
+                    </Grid>
+
+                    <!-- БРЕНД -->
+                    <TextBlock Text="Бренд" Style="{StaticResource FormLabelStyle}"/>
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+
+                        <!-- Стандартный вид -->
+                        <ComboBox x:Name="BrandCb" Grid.Column="0" Style="{StaticResource FormComboBoxStyle}"/>
+                        <Button x:Name="ShowAddBrandBt" Grid.Column="1" Content="+" Width="35" Margin="5,0,0,0" Click="ShowAddBrandBt_Click"/>
+
+                        <!-- Режим добавления (Скрыт по умолчанию) -->
+                        <TextBox x:Name="NewBrandTb" Grid.Column="0" Visibility="Collapsed" Style="{StaticResource FormTextBoxStyle}"/>
+                        <Button x:Name="SaveBrandBt" Grid.Column="1" Content="✓" Width="35" Margin="5,0,0,0" Visibility="Collapsed" Click="SaveBrandBt_Click"/>
+                        <Button x:Name="CancelBrandBt" Grid.Column="2" Content="X" Width="35" Margin="5,0,0,0" Visibility="Collapsed" Click="CancelBrandBt_Click"/>
+                    </Grid>
+
+                    <!-- МАТЕРИАЛ -->
+                    <TextBlock Text="Материал" Style="{StaticResource FormLabelStyle}"/>
+                    <TextBox x:Name="MaterialTb" Style="{StaticResource FormTextBoxStyle}"/>
+
+                    <!-- ЦЕНА -->
+                    <TextBlock Text="Цена" Style="{StaticResource FormLabelStyle}"/>
+                    <TextBox x:Name="PriceTb" Style="{StaticResource FormTextBoxStyle}"/>
+
+                    <!-- КОЛИЧЕСТВО -->
+                    <TextBlock Text="Количество" Style="{StaticResource FormLabelStyle}"/>
+                    <TextBox x:Name="QuantityTb" Style="{StaticResource FormTextBoxStyle}"/>
+
+                   <!-- ФОТО -->
+                    <TextBlock Text="Изображение" Style="{StaticResource FormLabelStyle}"/>
+                    <Border Style="{StaticResource ImageUploadContainerStyle}">
+                        <StackPanel>
+                            <Image x:Name="ProductImage" Height="220" Stretch="Uniform"/>
+                            <Button Content="Выбрать фото" Style="{StaticResource PrimaryButtonStyle}" Margin="0,20,0,0" Click="SelectImageBt_Click"/>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- КНОПКА СОХРАНЕНИЯ -->
+                    <Button x:Name="SaveBt" Content="Сохранить" Style="{StaticResource PrimaryButtonStyle}" Height="48" FontSize="15" Margin="0,30,0,0" Click="SaveBt_Click"/>
+
+                </StackPanel>
+            </ScrollViewer>
+        </Border>
+    </Grid>
+</Window>

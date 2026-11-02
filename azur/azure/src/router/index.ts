@@ -10,10 +10,29 @@ import UserView from '../views/ProfileView.vue'
 import ProductView from '../views/ProductView.vue' 
 
 const routes: Array<RouteRecordRaw> = [
-  { path: '/', name: 'Welcome', component: WelcomeView },
-  { path: '/login', name: 'Login', component: LoginView },
-  { path: '/register', name: 'Register', component: RegisterView },
-  { path: '/catalog', name: 'Catalog', component: CatalogView },
+  { 
+    path: '/', 
+    name: 'Welcome', 
+    component: WelcomeView,
+    meta: { hideHeader: true, hideFooter: true } // Скрываем шапку и футер
+  },
+  { 
+    path: '/login', 
+    name: 'Login', 
+    component: LoginView,
+    meta: { hideHeader: true, hideFooter: true } 
+  },
+  { 
+    path: '/register', 
+    name: 'Register', 
+    component: RegisterView,
+    meta: { hideHeader: true, hideFooter: true } 
+  },
+  { 
+    path: '/catalog', 
+    name: 'Catalog', 
+    component: CatalogView 
+  },
   { 
     path: '/product/:id', 
     name: 'Product', 
@@ -32,10 +51,10 @@ const routes: Array<RouteRecordRaw> = [
     meta: { requiresAuth: true }
   },
   {
-  path: '/checkout',
-  name: 'checkout',
-  component: () => import('@/views/CheckoutDetailsView.vue')
-}
+    path: '/checkout',
+    name: 'checkout',
+    component: () => import('@/views/CheckoutDetailsView.vue')
+  }
 ]
 
 const router = createRouter({

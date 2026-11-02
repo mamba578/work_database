@@ -25,7 +25,7 @@ namespace API_project.Controlles
         [HttpPost("AddPoint")]
         public ActionResult AddBrand(Point newPoint)
         {
-            var currentPoints = _context.Points.FirstOrDefault(c => c.Address == newPoint.Address);
+            var currentPoints = _context.Points.FirstOrDefault(c => c.City == newPoint.City && c.Street == newPoint.Street && c.HomeNumber == newPoint.HomeNumber);
             if (currentPoints != null)
             {
                 return BadRequest("Такая точка уже есть");

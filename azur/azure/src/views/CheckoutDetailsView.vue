@@ -155,15 +155,6 @@ async function submitOrder() {
 
 <template>
   <div class="checkout-wrapper">
-    <header class="catalog-header">
-      <div class="header-top">
-        <h1 class="header-title">Оформление заказа «Azure»</h1>
-      </div>
-      <div class="header-nav">
-        <button class="nav-btn" @click="router.push('/cart')">Назад в корзину</button>
-      </div>
-    </header>
-
     <main class="checkout-content-grid">
       <!-- Левая колонка: Ваш заказ -->
       <section class="order-left-column">
@@ -259,44 +250,6 @@ async function submitOrder() {
   background-color: #DCE3EA;
   display: flex;
   flex-direction: column;
-}
-.catalog-header {
-  background-color: #C8D3DF;
-  padding: 16px 24px 12px 24px;
-  border-bottom-left-radius: 20px;
-  border-bottom-right-radius: 20px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-.header-top {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-}
-.header-title {
-  font-size: 22px;
-  color: #1a3a6b;
-  margin: 0;
-}
-.header-nav {
-  display: flex;
-  justify-content: flex-start;
-}
-.nav-btn {
-  padding: 8px 24px;
-  border-radius: 18px;
-  border: none;
-  background-color: #6F8AA6;
-  color: white;
-  font-size: 15px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-.nav-btn:hover {
-  background-color: #557290;
 }
 .checkout-content-grid {
   padding: 24px;
